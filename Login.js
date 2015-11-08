@@ -1,18 +1,21 @@
 'use strict';
 
-const React = require('react-native');
+const React  = require('react-native');
+
 const {
   StyleSheet,
   View,
   Image,
   Text,
   TextInput,
-  TouchableHighlight
+  TouchableHighlight,
+  ActivityIndicatorIOS
 } = React;
 
-const octocat = require('./img/Octocat.png');
+const octocat = require('./img/Octocat.png'),
+      Utility = require('./utilities/utility.js');
 
-let styles = StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         backgroundColor: '#F5FCFF',
         flex: 1,
@@ -51,25 +54,95 @@ let styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 24
+    },
+    loader: {
+        marginTop: 20
+    },
+    error: {
+        color: 'red',
+        paddingTop: 10
     }
 });
 
-let Login = React.createClass({
-    render: function() {
+class Login extends React.Component {
+
+    constructor (props) {
+        super(props);
+
+        this.state = {
+            showProgress: false
+        };
+        Utility.bind(this, ['onLoginPressed']);
+    }
+
+    onLoginPressed () {
+        console.log('Login user: ' + this.state.username);
+        this.setState({showProgress: true});
+
+        const authService = require('./AuthService');
+
+        authService.login({
+            username: this.state.username,
+            password: this.state.password
+        }, (results) => {
+            this.setState(Object.assign({
+                showProgress: false
+            }, results));
+
+            if (results.success && this.props.onLogin) {
+                this.props.onLogin();
+            }
+        });
+    }
+
+    render () {
+        let errorCtrl = <View />;
+
+        if (!this.state.success && this.state.badCredentials) {
+            errorCtrl = <Text style={styles.error}>
+                That username and password combination did not work.
+            </Text>;
+        }
+
+        if (!this.state.success && this.state.unknownError) {
+            errorCtrl = <Text style={styles.error}>
+                An unknown error has occurred!!.
+            </Text>;
+        }
+
         return (
             <View style={styles.container}>
                 <Image style={styles.logo} source={octocat} />
                 <Text style={styles.heading}>
                     Github Browser
                 </Text>
-                <TextInput style={styles.input} placeholder="Github Username" />
-                <TextInput style={styles.input} placeholder="Github Password" secureTextEntry="true"/>
-                <TouchableHighlight style={styles.button}>
+                <TextInput
+                    onChangeText={(text) => this.setState({username: text})}
+                    style={styles.input}
+                    placeholder="Github Username" />
+                <TextInput
+                    onChangeText={(text) => this.setState({password: text})}
+                    style={styles.input}
+                    placeholder="Github Password"
+                    secureTextEntry/>
+                <TouchableHighlight
+                    onPress={this.onLoginPressed.bind(this)}
+                    style={styles.button}>
                     <Text style={styles.buttonText}>Log in</Text>
                 </TouchableHighlight>
+                {errorCtrl}
+                <ActivityIndicatorIOS
+                    animating={this.state.showProgress}
+                    size="large"
+                    style={styles.loader}
+                />
             </View>
         );
     }
-});
+}
+
+Login.propTypes = {
+    onLogin : React.PropTypes.func.isRequired
+};
 
 module.exports = Login;

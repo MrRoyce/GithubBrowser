@@ -6,6 +6,8 @@
     "start": "react-native start --root=./ --assetRoots=./ios/GithubBrowser/Images.xcassets"
   },
   "dependencies": {
+    "buffer": "^3.5.1",
+    "lodash": "^3.10.1",
     "react-native": "^0.14.0"
   },
   "devDependencies": {

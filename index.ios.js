@@ -1,16 +1,20 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- */
 'use strict';
 
-var React = require('react-native');
-var {
+const React = require('react-native');
+const {
   AppRegistry,
-  StyleSheet
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicatorIOS
 } = React;
 
-var styles = StyleSheet.create({
+const Login = require('./Login'),
+      AppContainer = require('./AppContainer'),
+      Utility = require('./utilities/utility.js'),
+      AuthService = require('./AuthService');
+
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -29,18 +33,54 @@ var styles = StyleSheet.create({
   }
 });
 
-var Login = require('./Login');
+class GithubBrowser extends React.Component {
+    constructor (props) {
+        super(props);
 
-var GithubBrowser = React.createClass({
-  render: function() {
-    var message = 'Hello there!!!';
+        this.state = {
+            isLoggedIn: false,
+            checkingAuth: true
+        };
 
-    return (
-      <Login />
-    );
-  }
-});
+        Utility.bind(this, ['onLogin', 'componentDidMount']);
+    }
 
+    // Only executed once
+    componentDidMount () {
+        AuthService.getAuthInfo((err, authInfo)=> {
+          this.setState({
+            checkingAuth: false,
+            isLoggedIn: authInfo !== null
+          });
+        });
+    }
 
+    onLogin () {
+        this.setState({isLoggedIn: true});
+    }
+
+    render () {
+        if (this.state.checkingAuth) {
+          return (
+            <View style={styles.container}>
+              <ActivityIndicatorIOS
+                animating
+                size="large"
+                style={styles.loader} />
+            </View>
+          );
+        }
+
+      if (this.state.isLoggedIn)  {
+        return (
+          <AppContainer />
+        );
+      } else {
+        return (
+          <Login onLogin={this.onLogin} />
+        );
+      }
+    }
+}
 
 AppRegistry.registerComponent('GithubBrowser', () => GithubBrowser);
